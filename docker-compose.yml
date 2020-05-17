@@ -1,25 +1,41 @@
 version: "3.7"
 services:
   spark-master:
-    image: spydernaz/spark-master:latest
+    image: spark-master:latest
+    container_name: spark-master
+    hostname: spark-master
     ports:
-      - "9090:8080"
+      - "8080:8080"
       - "7077:7077"
+    networks: 
+      spark-network:
+        ipv4_address: 10.5.0.2
     volumes:
-       - ./apps:/opt/spark-apps
-       - ./data:/opt/spark-data
+       - /tmp/spark-apps:/opt/spark-apps
+       - /tmp/spark-data:/opt/spark-data
     environment:
       - "SPARK_LOCAL_IP=spark-master"
   spark-worker:
-    image: spydernaz/spark-worker:latest
+    image: spark-worker:latest
+    container_name: spark-worker
+    hostname: spark-worker
     depends_on:
       - spark-master
+    ports:
+      - "8081:8081"
+    env_file: ./env/spark-worker.sh
     environment:
-      - SPARK_MASTER=spark://spark-master:7077
-      - SPARK_WORKER_CORES=1
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_DRIVER_MEMORY=128m
-      - SPARK_EXECUTOR_MEMORY=256m
+      - "SPARK_LOCAL_IP=spark-worker"
+    networks: 
+      spark-network:
+        ipv4_address: 10.5.0.3
     volumes:
-       - ./apps:/opt/spark-apps
-       - ./data:/opt/spark-data
+       - /tmp/spark-apps:/opt/spark-apps
+       - /tmp/spark-data:/opt/spark-data
+networks:
+  spark-network:
+    driver: bridge
+    ipam:
+     driver: default
+     config:
+       - subnet: 10.5.0.0/16 
